@@ -136,7 +136,7 @@ def route_research(state: SummaryState, config: RunnableConfig) -> Literal["fina
     """ Route the research based on the follow-up query """
 
     configurable = Configuration.from_runnable_config(config)
-    if state.research_loop_count <= configurable.max_web_research_loops:
+    if state.research_loop_count <= int(configurable.max_web_research_loops):
         return "web_research"
     else:
         return "finalize_summary"
