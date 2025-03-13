@@ -7,26 +7,54 @@ from langchain_core.runnables import RunnableConfig
 from langchain_ollama import ChatOllama
 from langgraph.graph import START, END, StateGraph
 
-from assistant.configuration import Configuration, SearchAPI
-from assistant.utils import deduplicate_and_format_sources, tavily_search, format_sources, perplexity_search, duckduckgo_search
+from assistant.configuration import Configuration
+from assistant.utils import deduplicate_and_format_sources, tavily_search, format_sources, perplexity_search, duckduckgo_search, strip_thinking_tokens
 from assistant.state import SummaryState, SummaryStateInput, SummaryStateOutput
-from assistant.prompts import query_writer_instructions, summarizer_instructions, reflection_instructions
+from assistant.prompts import query_writer_instructions, summarizer_instructions, reflection_instructions, get_current_date
+from assistant.lmstudio import ChatLMStudio
 
 # Nodes
 def generate_query(state: SummaryState, config: RunnableConfig):
     """ Generate a query for web search """
 
     # Format the prompt
-    query_writer_instructions_formatted = query_writer_instructions.format(research_topic=state.research_topic)
+    current_date = get_current_date()
+    formatted_prompt = query_writer_instructions.format(
+        current_date=current_date,
+        research_topic=state.research_topic
+    )
 
     # Generate a query
     configurable = Configuration.from_runnable_config(config)
-    llm_json_mode = ChatOllama(base_url=configurable.ollama_base_url, model=configurable.local_llm, temperature=0, format="json")
+    
+    # Choose the appropriate LLM based on the provider
+    if configurable.llm_provider == "lmstudio":
+        llm_json_mode = ChatLMStudio(
+            base_url=configurable.lmstudio_base_url, 
+            model=configurable.local_llm, 
+            temperature=0, 
+            format="json"
+        )
+    else:  # Default to Ollama
+        llm_json_mode = ChatOllama(
+            base_url=configurable.ollama_base_url, 
+            model=configurable.local_llm, 
+            temperature=0, 
+            format="json"
+        )
+    
     result = llm_json_mode.invoke(
-        [SystemMessage(content=query_writer_instructions_formatted),
+        [SystemMessage(content=formatted_prompt),
         HumanMessage(content=f"Generate a query for web search:")]
     )
-    query = json.loads(result.content)
+    print(result.content)
+    
+    # Strip thinking tokens if configured
+    content = result.content
+    if configurable.strip_thinking_tokens:
+        content = strip_thinking_tokens(content)
+    
+    query = json.loads(content)
 
     return {"search_query": query['query']}
 
@@ -83,7 +111,21 @@ def summarize_sources(state: SummaryState, config: RunnableConfig):
 
     # Run the LLM
     configurable = Configuration.from_runnable_config(config)
-    llm = ChatOllama(base_url=configurable.ollama_base_url, model=configurable.local_llm, temperature=0)
+    
+    # Choose the appropriate LLM based on the provider
+    if configurable.llm_provider == "lmstudio":
+        llm = ChatLMStudio(
+            base_url=configurable.lmstudio_base_url, 
+            model=configurable.local_llm, 
+            temperature=0
+        )
+    else:  # Default to Ollama
+        llm = ChatOllama(
+            base_url=configurable.ollama_base_url, 
+            model=configurable.local_llm, 
+            temperature=0
+        )
+    
     result = llm.invoke(
         [SystemMessage(content=summarizer_instructions),
         HumanMessage(content=human_message_content)]
@@ -105,19 +147,40 @@ def reflect_on_summary(state: SummaryState, config: RunnableConfig):
 
     # Generate a query
     configurable = Configuration.from_runnable_config(config)
-    llm_json_mode = ChatOllama(base_url=configurable.ollama_base_url, model=configurable.local_llm, temperature=0, format="json")
+    
+    # Choose the appropriate LLM based on the provider
+    if configurable.llm_provider == "lmstudio":
+        llm_json_mode = ChatLMStudio(
+            base_url=configurable.lmstudio_base_url, 
+            model=configurable.local_llm, 
+            temperature=0, 
+            format="json"
+        )
+    else:  # Default to Ollama
+        llm_json_mode = ChatOllama(
+            base_url=configurable.ollama_base_url, 
+            model=configurable.local_llm, 
+            temperature=0, 
+            format="json"
+        )
+    
     result = llm_json_mode.invoke(
         [SystemMessage(content=reflection_instructions.format(research_topic=state.research_topic)),
         HumanMessage(content=f"Identify a knowledge gap and generate a follow-up web search query based on our existing knowledge: {state.running_summary}")]
     )
-    follow_up_query = json.loads(result.content)
+    
+    # Strip thinking tokens if configured
+    content = result.content
+    if configurable.strip_thinking_tokens:
+        content = strip_thinking_tokens(content)
+    
+    follow_up_query = json.loads(content)
 
     # Get the follow-up query
     query = follow_up_query.get('follow_up_query')
 
     # JSON mode can fail in some cases
     if not query:
-
         # Fallback to a placeholder query
         return {"search_query": f"Tell me more about {state.research_topic}"}
 

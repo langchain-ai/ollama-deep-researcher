@@ -1,5 +1,15 @@
+from datetime import datetime
+
+# Get current date in a readable format
+def get_current_date():
+    return datetime.now().strftime("%B %d, %Y")
+
 query_writer_instructions="""Your goal is to generate a targeted web search query.
-The query will gather information related to a specific topic.
+
+<CONTEXT>
+Current date: {current_date}
+Please ensure your queries account for the most current information available as of this date.
+</CONTEXT>
 
 <TOPIC>
 {research_topic}

@@ -1,6 +1,6 @@
 # Ollama Deep Researcher
 
-Ollama Deep Researcher is a fully local web research assistant that uses any LLM hosted by [Ollama](https://ollama.com/search). Give it a topic and it will generate a web search query, gather web search results (via [Tavily](https://www.tavily.com/) by default), summarize the results of web search, reflect on the summary to examine knowledge gaps, generate a new search query to address the gaps, search, and improve the summary for a user-defined number of cycles. It will provide the user a final markdown summary with all sources used.
+Ollama Deep Researcher is a fully local web research assistant that uses any LLM hosted by [Ollama](https://ollama.com/search) or [LMStudio](https://lmstudio.ai/). Give it a topic and it will generate a web search query, gather web search results (via [Tavily](https://www.tavily.com/) by default), summarize the results of web search, reflect on the summary to examine knowledge gaps, generate a new search query to address the gaps, search, and improve the summary for a user-defined number of cycles. It will provide the user a final markdown summary with all sources used.
 
 ![research-rabbit](https://github.com/user-attachments/assets/4308ee9c-abf3-4abb-9d1e-83e7c2c3f187)
 
@@ -15,7 +15,7 @@ See it in action or build it yourself? Check out these helpful video tutorials:
 
 ## 🚀 Quickstart
 
-### Mac
+### Using Ollama
 
 1. Download the Ollama app for Mac [here](https://ollama.com/download).
 
@@ -24,7 +24,26 @@ See it in action or build it yourself? Check out these helpful video tutorials:
 ollama pull deepseek-r1:8b
 ```
 
-3. Clone the repository:
+### Using LMStudio
+
+1. Download and install LMStudio from [here](https://lmstudio.ai/).
+
+2. In LMStudio:
+   - Download and load your preferred model (e.g., qwen_qwq-32b)
+   - Go to the "Local Server" tab
+   - Start the server with the OpenAI-compatible API
+   - Note the server URL (default: http://localhost:1234/v1)
+
+3. Update your `.env` file with the following settings:
+```
+LLM_PROVIDER=lmstudio
+LOCAL_LLM=qwen_qwq-32b  # Use the exact model name as shown in LMStudio
+LMSTUDIO_BASE_URL=http://localhost:1234/v1
+```
+
+### Installation
+
+1. Clone the repository:
 ```bash
 git clone https://github.com/langchain-ai/ollama-deep-researcher.git
 cd ollama-deep-researcher
