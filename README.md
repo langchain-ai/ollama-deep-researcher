@@ -39,8 +39,9 @@ ollama pull deepseek-r1:8b
 
 * If set, these values will take precedence over the defaults set in the `Configuration` class in `configuration.py`. 
 ```shell
-OLLAMA_BASE_URL="url" # Ollama service endpoint, defaults to `http://localhost:11434` 
-OLLAMA_MODEL=model # the model to use, defaults to `llama3.2` if not set
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL="http://localhost:11434" # Ollama service endpoint, defaults to `http://localhost:11434` 
+LOCAL_LLM=model # the model to use, defaults to `llama3.2` if not set
 ```
 
 ### Selecting local model with LMStudio
@@ -185,11 +186,11 @@ https://github.com/PacoVK/ollama-deep-researcher-ts
 
 ## Running as a Docker container
 
-The included `Dockerfile` only runs LangChain Studio with ollama-deep-researcher as a service, but does not include Ollama as a dependant service. You must run Ollama separately and configure the `OLLAMA_BASE_URL` environment variable. Optionally you can also specify the Ollama model to use by providing the `OLLAMA_MODEL` environment variable.
+The included `Dockerfile` only runs LangChain Studio with local-deep-researcher as a service, but does not include Ollama as a dependant service. You must run Ollama separately and configure the `OLLAMA_BASE_URL` environment variable. Optionally you can also specify the Ollama model to use by providing the `LOCAL_LLM` environment variable.
 
 Clone the repo and build an image:
 ```
-$ docker build -t ollama-deep-researcher .
+$ docker build -t local-deep-researcher .
 ```
 
 Run the container:
@@ -197,9 +198,10 @@ Run the container:
 $ docker run --rm -it -p 2024:2024 \
   -e SEARCH_API="tavily" \ 
   -e TAVILY_API_KEY="tvly-***YOUR_KEY_HERE***" \
+  -e LLM_PROVIDER=ollama
   -e OLLAMA_BASE_URL="http://host.docker.internal:11434/" \
-  -e OLLAMA_MODEL="llama3.2" \  
-  ollama-deep-researcher
+  -e LOCAL_LLM="llama3.2" \  
+  local-deep-researcher
 ```
 
 NOTE: You will see log message:
